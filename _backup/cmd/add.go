@@ -1,5 +1,5 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+Copyright © 2025 <asciifaceman>
 */
 package cmd
 
@@ -8,7 +8,6 @@ import (
 
 	"github.com/asciifaceman/gong/gong"
 	"github.com/asciifaceman/hobocode"
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -54,32 +53,28 @@ gong add -g bundle.gong -i file1,file2 -f file1.txt,file2.txt`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		f := afero.NewOsFs()
-		gf, err := gong.LoadGongfile(f, gongFile)
-		if err != nil {
-			hobocode.Errorf("failed to load gong file %s: %v", gongFile, err)
-			return
-		}
-		defer gf.File.Close()
-
 		hobocode.Infof("Adding %d files to Gong bundle: %s", len(fileMap), gongFile)
-		err = gf.AppendAssets(f, fileMap)
-		if err != nil {
-			hobocode.Errorf("Failed to append assets to Gong bundle: %v", err)
-			return
-		}
 
-		if err := gf.Write(f); err != nil {
-			hobocode.Errorf("Failed to write Gong bundle: %v", err)
+		a, err := gong.BuildAssetEntries(fileMap)
+		if err != nil {
+			hobocode.Errorf("Failed to build asset entries: %v", err)
 			return
 		}
-		hobocode.Infof("Successfully added %d files to Gong bundle: %s", len(fileMap), gongFile)
+		size := gong.AssignAssetOffsets(a)
+		hobocode.Infof("Total size of asset entries: %d bytes", size)
+
+		if err := gong.WriteGongFile(gongFile, a); err != nil {
+			hobocode.Errorf("Failed to write Gong file: %v", err)
+			return
+		}
+		hobocode.Infof("Successfully added files to Gong bundle: %s", gongFile)
 
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(addCmd)
+	//addCmd.Flags().StringSliceVarP(&addFiles, "files", "f", addFiles, "List of files to add to the Gong bundle")
 	addCmd.Flags().StringSliceVarP(&addFiles, "file", "f", addFiles, "File to add to the Gong bundle")
 	addCmd.Flags().StringSliceVarP(&addFileIDs, "id", "i", addFileIDs, "ID of the file to add to the Gong bundle")
 

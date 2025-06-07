@@ -2,6 +2,7 @@ package gio
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/asciifaceman/hobocode"
 	"github.com/spf13/afero"
@@ -38,4 +39,13 @@ func ReadFileBytes(f afero.Fs, path string) ([]byte, error) {
 		return nil, fmt.Errorf("file %s is empty", path)
 	}
 	return data, nil
+}
+
+func AcquireFile(f afero.Fs, path string) (file afero.File, err error) {
+	if Exists(f, path) {
+		file, err = f.OpenFile(path, os.O_RDWR, 0644)
+		return
+	}
+	file, err = f.Create(path)
+	return
 }
