@@ -35,4 +35,28 @@ func (d *DirectoryEntryHeader) EncodedSize() uint32 {
 func (d *DirectoryEntryHeader) Encode() []byte {
 	var enc bytes.Buffer
 
+	size := d.EncodedSize()
+	enc.Grow(int(size))
+
+	if _, err := enc.Write(SODE); err != nil {
+		return nil // Error writing SODE, return empty slice
+	}
+
+	// write size uint32 bytes
+	if _, err := enc.Write([]byte{byte(size >> 24), byte(size >> 16), byte(size >> 8), byte(size)}); err != nil {
+		return nil // Error writing size, return empty slice
+	}
+
+	// write ID length uint16 and ID []byte
+	idLen := len(d.ID)
+	if _, err := enc.Write([]byte{byte(idLen >> 8), byte(idLen)}); err != nil {
+		return nil // Error writing ID length, return empty slice
+	}
+	if _, err := enc.Write(d.ID); err != nil {
+		return nil // Error writing ID bytes, return empty slice
+	}
+
+	//
+
+	return enc.Bytes()
 }
