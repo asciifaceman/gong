@@ -1,5 +1,5 @@
 /*
-Copyright © 2025 <asciifaceman>
+Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 */
 package cmd
 
@@ -8,6 +8,7 @@ import (
 
 	"github.com/asciifaceman/gong/gong"
 	"github.com/asciifaceman/hobocode"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -53,28 +54,40 @@ gong add -g bundle.gong -i file1,file2 -f file1.txt,file2.txt`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		hobocode.Infof("Adding %d files to Gong bundle: %s", len(fileMap), gongFile)
-
-		a, err := gong.BuildAssetEntries(fileMap)
+		f := afero.NewOsFs()
+		gf, err := gong.LoadGongFile(f, gongFile)
 		if err != nil {
-			hobocode.Errorf("Failed to build asset entries: %v", err)
+			hobocode.Errorf("failed to load gong file %s: %v", gongFile, err)
 			return
 		}
-		size := gong.AssignAssetOffsets(a)
-		hobocode.Infof("Total size of asset entries: %d bytes", size)
+		defer gf.File.Close()
 
-		if err := gong.WriteGongFile(gongFile, a); err != nil {
-			hobocode.Errorf("Failed to write Gong file: %v", err)
+		assets, err := gong.BuildAssets(f, fileMap)
+		if err != nil {
+			hobocode.Errorf("failed to build assets from files: %v", err)
 			return
 		}
-		hobocode.Infof("Successfully added files to Gong bundle: %s", gongFile)
+
+		hobocode.Infof("Adding %d files to Gong bundle: %s", len(assets), gongFile)
+		for _, asset := range assets {
+			if err := gf.Append(asset); err != nil {
+				hobocode.Errorf("failed to append asset %s to Gong bundle: %v", asset.ID, err)
+				return
+			}
+			hobocode.Infof("Successfully staged asset %s with ID %s to Gong bundle", asset.Filename, asset.ID)
+		}
+
+		if err := gf.Write(f); err != nil {
+			hobocode.Errorf("failed to write Gong bundle: %v", err)
+			return
+		}
+		hobocode.Infof("Successfully added %d files to Gong bundle: %s", len(assets), gongFile)
 
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(addCmd)
-	//addCmd.Flags().StringSliceVarP(&addFiles, "files", "f", addFiles, "List of files to add to the Gong bundle")
 	addCmd.Flags().StringSliceVarP(&addFiles, "file", "f", addFiles, "File to add to the Gong bundle")
 	addCmd.Flags().StringSliceVarP(&addFileIDs, "id", "i", addFileIDs, "ID of the file to add to the Gong bundle")
 

@@ -36,16 +36,15 @@ var getCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		hobocode.HeaderLeft("Startup")
-		hobocode.Infof("Retrieving asset with ID %s from Gong file %s", getId, gongFile)
 		f := afero.NewOsFs()
-		gf, err := gong.LoadGongfile(f, gongFile)
+		gf, err := gong.LoadGongFile(f, gongFile)
 		if err != nil {
 			hobocode.Errorf("failed to load gong file %s: %v", gongFile, err)
 			return
 		}
 		defer gf.File.Close()
-		asset, content, err := gf.GetAsset(getId)
+
+		asset, err := gf.GetAsset(getId)
 		if err != nil {
 			hobocode.Errorf("failed to retrieve asset with ID %s: %v", getId, err)
 			return
@@ -57,11 +56,38 @@ var getCmd = &cobra.Command{
 			return
 		}
 		defer file.Close()
-		if _, err := file.Write(content); err != nil {
+		if _, err := file.Write(asset.Content); err != nil {
 			hobocode.Errorf("failed to write content to file %s: %v", asset.Filename, err)
 			return
 		}
 		hobocode.Infof("Successfully extracted asset with ID %s to file %s", getId, asset.Filename)
+
+		// hobocode.HeaderLeft("Startup")
+		// hobocode.Infof("Retrieving asset with ID %s from Gong file %s", getId, gongFile)
+		// f := afero.NewOsFs()
+		// gf, err := gong.LoadGongfile(f, gongFile)
+		// if err != nil {
+		// 	hobocode.Errorf("failed to load gong file %s: %v", gongFile, err)
+		// 	return
+		// }
+		// defer gf.File.Close()
+		// asset, content, err := gf.GetAsset(getId)
+		// if err != nil {
+		// 	hobocode.Errorf("failed to retrieve asset with ID %s: %v", getId, err)
+		// 	return
+		// }
+
+		// file, err := f.Create(asset.Filename)
+		// if err != nil {
+		// 	hobocode.Errorf("failed to create file %s: %v", asset.Filename, err)
+		// 	return
+		// }
+		// defer file.Close()
+		// if _, err := file.Write(content); err != nil {
+		// 	hobocode.Errorf("failed to write content to file %s: %v", asset.Filename, err)
+		// 	return
+		// }
+		// hobocode.Infof("Successfully extracted asset with ID %s to file %s", getId, asset.Filename)
 	},
 }
 
