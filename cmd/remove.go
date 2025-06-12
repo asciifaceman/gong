@@ -1,12 +1,14 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
-	"fmt"
+	"os"
 
+	"github.com/asciifaceman/gong/gong"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +23,27 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("remove called")
+		d := &gong.DirectoryEntryHeader{
+			ID:          []byte("exampleID"),
+			FNAME:       []byte("exampleFile"),
+			FileType:    []byte("txt"),
+			Offset:      1234,
+			Size:        5678,
+			Compression: 0,
+		}
+		encoded := d.Encode()
+		spew.Dump(encoded)
+
+		f := afero.NewOsFs()
+		file, err := f.OpenFile("test.gong", os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+		if _, err := file.Write(encoded); err != nil {
+			panic(err)
+		}
+
 	},
 }
 

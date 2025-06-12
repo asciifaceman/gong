@@ -18,6 +18,7 @@ var (
 	GONG Marker = []byte{0x47, 0x4F, 0x4E, 0x47, 0x00} // Gong file marker
 
 	SODE Marker = []byte{0xFF, 0xD8} // Start of Directory Entry
+	EODE Marker = []byte{0xFF, 0xD9} // End of Directory Entry
 )
 
 // Marker is a binary marker used to identify files/sections
